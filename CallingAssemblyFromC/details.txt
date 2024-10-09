@@ -1,0 +1,107 @@
+refer : "https://sourceware.org/binutils/docs-2.42/as.html" -- intel information 
+"https://en.wikipedia.org/wiki/X86_calling_conventions" -- x86 calls 
+
+"
+Very Detailed Answer: Understanding noprefix in Assembly Code
+Question Summary
+
+The question seeks to clarify the meaning and purpose of the noprefix directive in the context of an assembly file, specifically in the provided code snippet: ext.s : .intel_syntax noprefix.
+Answer
+
+In assembly language programming, particularly when dealing with Intel syntax, the noprefix directive plays a crucial role in how the assembler interprets the instructions that follow. To understand this directive fully, let’s break down the components involved.
+What is Assembly Language?
+
+Assembly language is a low-level programming language that is closely related to machine code. It provides a way to write instructions that a computer's CPU can execute directly. Different architectures (like x86, ARM) have their own assembly languages, and they can use different syntaxes.
+Intel Syntax vs. AT&T Syntax
+
+Assembly language can be expressed in different syntaxes, with Intel and AT&T being the two most common for x86 architecture. The primary differences between these two syntaxes include:
+
+    Operand Order: Intel syntax uses the order destination, source, while AT&T uses source, destination.
+    Size Specifiers: In AT&T syntax, size specifiers (like b for byte, w for word) are suffixed to the instruction, whereas in Intel syntax, they are prefixed.
+
+The Role of noprefix
+
+The directive .intel_syntax noprefix is used to specify that the assembler should interpret the following instructions using Intel syntax without any prefixes for the operands. Here’s what this means in detail:
+
+    No Operand Prefixes: In Intel syntax, certain instructions may require prefixes to indicate the size of the operands (like byte ptr, word ptr, etc.). By using noprefix, you instruct the assembler to omit these prefixes, simplifying the code. For example:
+
+    language-assembly
+
+    mov eax, 1  ; Moves the value 1 into the EAX register
+
+    In this case, you do not need to specify the size of the operand explicitly.
+
+    Cleaner Code: The absence of prefixes can lead to cleaner and more readable code, especially for those who are accustomed to Intel syntax. It allows programmers to focus on the logic rather than the syntax intricacies.
+
+    Compatibility: Using noprefix can enhance compatibility with existing codebases that are written in Intel syntax, making it easier to integrate or port code without extensive modifications.
+
+Example Code
+
+Here’s a simple example to illustrate the use of noprefix in an assembly file:
+
+language-assembly
+
+.intel_syntax noprefix
+
+section .data
+    msg db 'Hello, World!', 0
+
+section .text
+    global _start
+
+_start:
+    ; Write the message to stdout
+    mov eax, 4          ; syscall number for sys_write
+    mov ebx, 1          ; file descriptor 1 is stdout
+    mov ecx, msg        ; pointer to the message
+    mov edx, 13         ; message length
+    int 0x80            ; call kernel
+
+    ; Exit the program
+    mov eax, 1          ; syscall number for sys_exit
+    xor ebx, ebx        ; return 0 status
+    int 0x80            ; call kernel
+
+In this example, the noprefix directive allows us to write the instructions without needing to specify operand sizes explicitly, making the code more straightforward.
+Conclusion
+
+In summary, the noprefix directive in the context of the assembly code you provided indicates that the assembler should interpret the subsequent instructions using Intel syntax without requiring operand size prefixes. This directive not only simplifies the code but also enhances readability and compatibility with existing Intel syntax codebases. Understanding such directives is essential for effective assembly programming and can significantly impact the clarity and maintainability of your code.
+
+"
+
+'''		
+.intel_syntax noprefix  // intel specific syntax 
+
+.global addNumbers // to use it wrt c langauge
+
+.text
+addNumbers:
+	add rdi,rsi// value is stored in rdi  ==>returns to rax by default 
+        mov rax,rdi // value is stored in rax
+	ret 		
+'''
+
+''
+commands to link assembly to c :
+hp@ubuntu:~/CallingAssemblyfromC$ as ext.s -o ext.o ==> as is assembly code -o means output file 
+linking : 
+hp@ubuntu:~/CallingAssemblyfromC$ gcc main.c ext.o -z noexestack  ==> link wrt object file of assembly
+
+
+errors  solution : 
+
+hp@ubuntu:~/CallingAssemblyfromC$ as -fPIC ext.s -o ext.o
+hp@ubuntu:~/CallingAssemblyfromC$ gcc -o main main.c ext.o -z noexecstack
+
+==>
+
+Compiling with -fPIC: This flag generates position-independent code, which is necessary for shared libraries and when using certain security features in modern operating systems. It allows the linker to create a PIE, which is a requirement when using the -z noexecstack option.
+
+Linking with -z noexecstack: This option is used to mark the stack as non-executable, enhancing security by preventing certain types of attacks. However, it requires that the object files be compiled in a way that supports this feature.
+
+hp@ubuntu:~/CallingAssemblyfromC$ as ext.s -o ext.o
+hp@ubuntu:~/CallingAssemblyfromC$ gcc -o main main.c ext.o -z noexecstack
+hp@ubuntu:~/CallingAssemblyfromC$ ./a.out
+Sum of 5 + 5 is : 10
+
+''

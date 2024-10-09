@@ -1,0 +1,292 @@
+"
+flat assembler ==> https://flatassembler.net/download.php
+"
+
+"references : 
+'https://ia801505.us.archive.org/18/items/bitsavers_ibmpcps2PSTechnicalReferenceApr87_5816663/PS2_and_PC_BIOS_Interface_Technical_Reference_Apr87.pdf'
+
+'https://edge.edx.org/c4x/BITSPilani/EEE231/asset/8086_family_Users_Manual_1_.pdf'
+
+"
+
+'''
+commands to run : 
+
+hp@ubuntu:~/Desktop/assemblySnakeGame$ fasm game.asm
+flat assembler  version 1.73.22  (16384 kilobytes memory)
+2 passes, 512 bytes.
+
+hp@ubuntu:~/Desktop/assemblySnakeGame$ qemu-system-x86_64 game.bin
+WARNING: Image format was not specified for 'game.bin' and probing guessed raw.
+         Automatically detecting the format is dangerous for raw images, write operations on block 0 will be restricted.
+         Specify the 'raw' format explicitly to remove the restrictions.
+'''
+
+'''
+extra details : 
+
+Very Detailed Answer: Assembly Language Game Code Explanation
+Question Summary
+
+This document provides a detailed explanation of an assembly language program designed for a simple game. The code is structured to handle keyboard input, manage cursor positioning, and display characters on the screen. Each instruction is explained with examples to enhance understanding.
+Answer
+
+The provided assembly code is a simple game that utilizes BIOS interrupts to interact with the keyboard and video display. Below, I will break down each instruction and its purpose in the program.
+Code Breakdown
+
+language-assembly
+
+org 0x7c00
+
+    Purpose: This directive sets the origin of the program to memory address 0x7C00, which is the standard location for bootable code in x86 architecture.
+
+Constants Definition
+
+language-assembly
+
+video = 0x10
+set_cursor_pos = 0x02
+write_char = 0x0a
+
+system_services = 0x15
+wait_service = 0x86
+
+keyboard_int = 0x16
+keyboard_read = 0x00
+keystroke_status = 0x01
+
+timer_int = 0x1a
+read_time_counter = 0x00
+
+left_arrow = 0x4b
+right_arrow = 0x4d
+down_arrow = 0x50
+up_arrow = 0x48
+
+    Purpose: These constants define various interrupt numbers and service routines for video, keyboard, and timer operations. For example, video is used for video services, while keyboard_int is for keyboard input.
+
+Main Routine
+
+language-assembly
+
+call handle_food
+
+    Purpose: This line calls the handle_food subroutine, which is responsible for managing the food's position in the game.
+
+language-assembly
+
+start:
+mov ah, wait_service
+mov cx, 1
+mov dx, 0
+int system_services
+
+    Purpose: This block waits for a system service. The wait_service interrupt is called to pause the program until a key is pressed. cx is set to 1, indicating a single wait, and dx is set to 0.
+
+Keyboard Handling
+
+language-assembly
+
+call handle_keyboard
+
+    Purpose: This line calls the handle_keyboard subroutine to check for keyboard input.
+
+language-assembly
+
+mov ah, write_char
+mov bh, 0
+mov cx, 1
+mov al, ' '
+int video
+
+    Purpose: This block writes a space character to the screen. The write_char service is invoked, with al set to a space character.
+
+Food Position Check
+
+language-assembly
+
+mov al, [food_pos]
+cmp [pos_row], al
+jne regular_flow
+cmp [pos_col], al
+jne regular_flow
+call handle_food
+
+    Purpose: This section checks if the current position of the food matches the player's position. If they match, it calls handle_food to update the game state.
+
+Regular Flow
+
+language-assembly
+
+regular_flow:
+mov ah, set_cursor_pos
+mov dh, [pos_row]
+mov dl, [pos_col]
+mov bh, 0
+int video
+
+    Purpose: This block sets the cursor position on the screen to the player's current position using the set_cursor_pos service.
+
+language-assembly
+
+mov ah, write_char
+mov bh, 0
+mov cx, 1
+mov al, '*'
+int video
+
+    Purpose: This writes the character '*' at the current cursor position, representing the player.
+
+Keyboard Input Handling
+
+language-assembly
+
+cmp byte [scan_code], left_arrow
+jne check_right_arrow
+dec byte [pos_col]
+jmp start
+
+    Purpose: This checks if the left arrow key is pressed. If so, it decrements the column position (pos_col) to move the player left.
+
+language-assembly
+
+check_right_arrow:
+cmp byte [scan_code], right_arrow
+jne check_up_arrow
+inc byte [pos_col]
+jmp start
+
+    Purpose: Similar to the left arrow check, this checks for the right arrow key and increments the column position to move the player right.
+
+language-assembly
+
+check_up_arrow:
+cmp byte [scan_code], up_arrow
+jne check_down_arrow
+dec byte [pos_row]
+jmp start
+
+    Purpose: This checks for the up arrow key and decrements the row position (pos_row) to move the player up.
+
+language-assembly
+
+check_down_arrow:
+cmp byte [scan_code], down_arrow
+jne failure
+inc byte [pos_row]
+
+    Purpose: This checks for the down arrow key and increments the row position to move the player down.
+
+Failure Condition
+
+language-assembly
+
+failure:
+jmp $
+
+    Purpose: This creates an infinite loop if an invalid key is pressed, effectively halting the game.
+
+Keyboard Handling Subroutine
+
+language-assembly
+
+handle_keyboard:
+mov ah, keystroke_status
+int keyboard_int
+jz end_of_handle_keyboard
+
+    Purpose: This checks if a keystroke is available. If not, it jumps to the end of the subroutine.
+
+language-assembly
+
+mov ah, keyboard_read
+int keyboard_int
+mov [scan_code], ah
+
+    Purpose: If a keystroke is available, it reads the key and stores the scan code in the scan_code variable.
+
+language-assembly
+
+end_of_handle_keyboard:
+ret
+
+    Purpose: This returns control to the main routine after handling the keyboard input.
+
+Food Handling Subroutine
+
+language-assembly
+
+handle_food:
+mov ah, read_time_counter
+int timer_int
+mov al, 7 ; 111
+and al, dl
+mov byte [food_pos], al
+add byte [food_pos], 7
+
+    Purpose: This subroutine manages the food's position based on the timer. It reads the time counter and updates the food position accordingly.
+
+language-assembly
+
+mov ah, set_cursor_pos
+mov dh, [food_pos]
+mov dl, [food_pos]
+mov bh, 0
+int video
+
+    Purpose: This sets the cursor position to the food's location.
+
+language-assembly
+
+mov ah, write_char
+mov bh, 0
+mov cx, 1
+mov al, '&'
+int video
+
+    Purpose: This writes the character '&' at the food's position on the screen.
+
+language-assembly
+
+mov ah, set_cursor_pos
+mov dh, 0
+mov dl, 0
+mov bh, 0
+int video
+
+    Purpose: This resets the cursor position to the top-left corner of the screen.
+
+language-assembly
+
+ret
+
+    Purpose: This returns control to the main routine after handling the food.
+
+Data Section
+
+language-assembly
+
+pos_row:
+db 10
+pos_col:
+db 5
+scan_code:
+db left_arrow
+food_pos:
+db 15
+
+    Purpose: This section defines variables for the player's position (pos_row, pos_col), the last key pressed (scan_code), and the food's position (food_pos).
+
+Boot Sector Padding
+
+language-assembly
+
+times 510 - ($ - $$) db 0
+dw 0xAA55
+
+    Purpose: This pads the boot sector to ensure it is 512 bytes long and adds the boot signature 0xAA55 at the end, which is required for the BIOS to recognize it as a valid bootable sector.
+
+Conclusion
+
+This assembly code provides a foundational structure for a simple game that responds to keyboard input and updates the display accordingly. Each instruction plays a crucial role in the overall functionality, from handling user input to managing game state and rendering graphics. Understanding these components is essential for anyone looking to delve deeper into assembly programming and game development.
+'''

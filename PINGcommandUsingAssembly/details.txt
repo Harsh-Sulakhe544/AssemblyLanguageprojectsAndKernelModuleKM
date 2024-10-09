@@ -1,0 +1,175 @@
+refer : "https://stackoverflow.com/questions/10168743/which-variable-size-to-use-db-dw-dd-with-x86-assembly" ==> for registers 
+
+so skip 20 bytes , header 
+ip-header is 20 bytes :
+icmp type (1 byte)
+icmp code  (1 byte )
+
+'''
+Very Detailed Answer: Explanation of ping.asm
+Question Summary
+
+The provided assembly code, ping.asm, implements a basic ICMP Echo Request (commonly known as a "ping") using raw sockets. This code is designed to create a socket, send an ICMP packet, receive a response, and check if the response is valid. Below, I will provide a detailed explanation of each section of the code, including the purpose of various instructions and data structures.
+Answer
+Overview of the Code Structure
+
+The code is organized into several sections: .data, .bss, and .text. Each section serves a specific purpose in the assembly program.
+
+    .data Section: This section is used to declare initialized data or constants. Here, we define the address structure and the ICMP packet.
+    .bss Section: This section is used for declaring variables that are not initialized by the program. In this case, we reserve space for incoming packets.
+    .text Section: This is where the actual code resides, including the entry point of the program.
+
+Detailed Breakdown
+Data Section
+
+language-assembly
+
+section .data
+
+address: 
+    dw 2                ; define word for address family (AF_INET)
+    dw 0                ; port number (0 for ICMP)
+    db 8                ; IP address (example: 8.0.0.0)
+    db 0
+    db 0
+    db 0
+    dd 0                ; zero out the rest of the address structure
+    dd 0 
+
+    Address Structure: This structure is used to define the destination address for the ICMP packet.
+        dw 2 specifies the address family (AF_INET for IPv4).
+        The port number is set to 0 since ICMP does not use ports.
+        The IP address is represented in a byte format, where 8.0.0.0 is specified as db 8, 0, 0, 0.
+        The remaining dd entries are zeroed out to complete the structure.
+
+language-assembly
+
+packet:
+    db 8                ; ICMP type (Echo Request)
+    db 0                ; ICMP code
+    dw 0                ; checksum (initially 0)
+    db 0                ; identifier
+    db 0                ; sequence number
+    db 0                ; payload (optional)
+    
+good:
+    db 'good', 0        ; null-terminated string
+
+    ICMP Packet Structure: This defines the ICMP packet to be sent.
+        db 8 indicates that this is an Echo Request.
+        The code is set to 0, and the checksum is initialized to 0 (it will be calculated later).
+        The identifier and sequence number are also initialized to 0.
+        The good string is defined for output purposes.
+
+BSS Section
+
+language-assembly
+
+section .bss
+buffer: 
+    resb 1024           ; reserve 1024 bytes for the incoming packet
+
+    Buffer for Incoming Packets: This reserves 1024 bytes of memory to store the incoming ICMP response.
+
+Text Section
+
+language-assembly
+
+section .text
+
+_start:
+    ; Create socket
+    mov rax, 41         ; syscall: socket
+    mov rdi, 2          ; AF_INET
+    mov rsi, 3          ; SOCK_RAW
+    mov rdx, 1          ; IPPROTO_ICMP
+    syscall 
+    mov r12, rax        ; save socket file descriptor
+
+    Socket Creation: The program creates a raw socket using the socket syscall.
+        mov rax, 41 specifies the syscall number for socket.
+        The parameters for the socket are set: AF_INET, SOCK_RAW, and IPPROTO_ICMP.
+        The resulting file descriptor is stored in r12 for later use.
+
+language-assembly
+
+    ; Prepare packet
+    ; Calculate checksum here (simple example, not complete)
+    mov rax, 0          ; reset checksum
+    mov [packet + 2], ax ; store checksum in packet
+
+    Checksum Calculation: Although the checksum calculation is not fully implemented, the code initializes it to 0 and stores it in the packet.
+
+language-assembly
+
+    ; Send packet
+    mov rax, 44         ; syscall: sendto
+    mov rdi, r12        ; socket file descriptor
+    mov rsi, packet     ; packet buffer
+    mov rdx, 8          ; packet length
+    mov r10, 0          ; flags
+    mov r8, address     ; address buffer
+    mov r9, 16          ; length of address buffer
+    syscall 
+
+    Sending the Packet: The program sends the ICMP packet using the sendto syscall.
+        The parameters include the socket file descriptor, the packet buffer, the length of the packet, and the destination address.
+
+language-assembly
+
+    ; Receive packet
+    mov rax, 45         ; syscall: recvfrom
+    mov rdi, r12        ; socket file descriptor
+    mov rsi, buffer     ; buffer to receive packet
+    mov rdx, 1024       ; buffer length
+    mov r10, 0          ; flags
+    mov r8, address     ; address buffer
+    mov r9, 16          ; length of address buffer
+    syscall 
+
+    Receiving the Response: The program waits for a response using the recvfrom syscall.
+        It specifies the buffer to store the incoming packet and its length.
+
+language-assembly
+
+    ; Check if the response is valid
+    cmp word [buffer + 20], 0 ; check the ICMP type
+    jne failure                ; jump if not equal
+
+    Response Validation: The program checks if the ICMP type in the response is valid (should be 0 for Echo Reply).
+        If the check fails, it jumps to the failure label.
+
+language-assembly
+
+    ; Print "good"
+    mov rax, 1          ; syscall: write
+    mov rdi, 1          ; file descriptor: stdout
+    mov rsi, good       ; pointer to string
+    mov rdx, 4          ; length of string
+    syscall
+
+    Outputting Result: If the response is valid, the program writes "good" to the standard output.
+
+language-assembly
+
+failure:
+    ; Handle failure (could print an error message or exit)
+    mov rax, 60         ; syscall: exit
+    xor rdi, rdi        ; exit code 0
+    syscall
+
+    Failure Handling: If the response is invalid, the program exits gracefully with a status code of 0.
+
+Conclusion
+
+The ping.asm code provides a foundational implementation of an ICMP Echo Request using assembly language. It demonstrates the use of raw sockets, packet construction, and basic error handling. While the checksum calculation is not fully implemented, the structure and flow of the program serve as a solid starting point for understanding network programming at a low level.
+
+
+final commands to run the project : 
+"
+hp@ubuntu:~/PINGCommandUsingAssembly$ nasm -f elf64 PING.asm 
+hp@ubuntu:~/PINGCommandUsingAssembly$ ld PING.o
+hp@ubuntu:~/PINGCommandUsingAssembly$ ./a.out
+good
+"
+'''

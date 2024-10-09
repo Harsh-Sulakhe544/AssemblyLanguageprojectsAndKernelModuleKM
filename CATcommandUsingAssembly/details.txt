@@ -1,0 +1,205 @@
+refer :
+==> assembly system calls / c ==> 
+ "https://www.tutorialspoint.com/assembly_programming/assembly_system_calls.htm" 
+"https://lwn.net/Articles/604287/"
+"https://stackoverflow.com/questions/38751614/what-are-the-return-values-of-system-calls-in-assembly"
+
+'''
+WHAT ARE THESE REGISTERS: RAX, ? 
+"https://stackoverflow.com/questions/10995349/what-does-the-r-stand-for-in-rax-rbx-rcx-rdx-rsi-rdi-rbp-rsp"
+"https://www.cs.uaf.edu/2017/fall/cs301/lecture/09_11_registers.html" ==> BEST EXPLAINATION FOR REGISTERS 
+
+==> REFER THE TABLE FROM BELOW OR "BEST EXPLAINATION FOR REGISTERS LINK "
+==> 
+Name   Notes   Type
+rax
+	Values are returned from functions in this register. 
+	scratch
+	rax 	eax 	ax 	ah and al
+rcx
+	Typical scratch register.  Some instructions also use it as a counter. 	scratch
+	rcx 	ecx 	cx 	ch and cl
+rdx
+	Scratch register.
+	
+WE CAN EVEN CHECK EACH BIT VALUES OF A VARIABLE IN BELOW CODE : 
+/******************************************************************************
+
+                              Online C++ Compiler.
+               Code, Compile, Run and Debug C++ program online.
+Write your code in this editor and press "Run" button to compile and execute it.
+
+*******************************************************************************/
+
+#include <iostream>
+
+int main()
+{
+    int value=1; /* value to test, starts at first (lowest) bit */
+for (int bit=0;bit<100;bit++) {
+	std::cout<<"at bit "<<bit<<" the value is "<<value<<"\n";
+	value=value+value; /* moves over by one bit */
+	if (value==0) break;
+}
+return 0;
+
+    return 0;
+}
+
+EXPLANATION : 
+
+    Initialization:
+        The program begins by including the <iostream> header, which allows for input and output operations.
+        An integer variable value is initialized to 1. This represents the lowest bit in binary (i.e., 0001).
+
+    Looping through Bits:
+        A for loop is set to iterate from 0 to 99, effectively allowing the program to check up to 100 bits.
+        Inside the loop, the current bit index and the corresponding value of value are printed to the console.
+
+    Bit Shifting:
+        The line value = value + value; effectively doubles the value of value. In binary terms, this is equivalent to a left bit shift (value <<= 1;), which moves all bits one position to the left. For example:
+            When value is 1 (binary 0001), after the operation, it becomes 2 (binary 0010).
+            Continuing this process, the values will be 4 (binary 0100), 8 (binary 1000), and so forth.
+
+    Termination Condition:
+        The loop checks if value has overflowed and reached 0. If so, it breaks out of the loop. This is a safeguard against infinite loops in case of integer overflow.
+
+Why is This Helpful?
+
+This code is particularly useful for understanding how integers are represented in binary and how bit manipulation works. Here are a few reasons why this is important:
+
+    Understanding Binary Representation: It helps programmers visualize how numbers are stored in memory, which is crucial for low-level programming and optimization.
+    Bit Manipulation Techniques: Many algorithms, especially in competitive programming and systems programming, rely on bit manipulation for efficiency. This code serves as a foundational example of how to manipulate bits.
+    Debugging and Optimization: Understanding how values change in binary can aid in debugging complex algorithms and optimizing code for performance.
+
+Simple Example
+
+Consider a scenario where you need to check if a specific bit is set in an integer. Using bit manipulation, you can achieve this efficiently. For instance, to check if the 3rd bit is set in an integer n, you can use the following code:
+
+language-cpp
+
+#include <iostream>
+
+int main() {
+    int n = 5; // binary representation: 0101
+    int bitPosition = 2; // checking the 3rd bit (0-indexed)
+
+    if (n & (1 << bitPosition)) {
+        std::cout << "The 3rd bit is set." << std::endl;
+    } else {
+        std::cout << "The 3rd bit is not set." << std::endl;
+    }
+
+    return 0;
+}
+
+In this example, the expression (1 << bitPosition) creates a mask that isolates the bit at the specified position. The bitwise AND operation (&) checks if that bit is set in n.
+Conclusion
+
+In summary, the provided C++ code snippet serves as an excellent introduction to the concept of bit manipulation. It not only demonstrates how to shift bits but also lays the groundwork for understanding more complex operations that are essential in various programming scenarios. By grasping these fundamental concepts, programmers can enhance their coding skills and optimize their solutions effectively.
+
+'''
+read()==> 
+"https://elixir.bootlin.com/linux/v3.14/source/fs/read_write.c#L511"
+
+OPEN() ==>"https://man7.org/linux/man-pages/man2/open.2.html" ==> THAT 2 ITSELF IS SYSTEM CALL NUMBER  
+
+
+'''
+UNDERSTANDING THE SYSTEM-STACK WITH ASSSEMBLY:
+
+==> 
+Very Detailed Answer: Accessing the Second Argument from RSP in Assembly
+Question Summary
+
+The question pertains to how to retrieve the second argument from the stack pointer (RSP) in an assembly language context, specifically in the x64 Linux environment. The provided code snippet indicates an intention to open a file using the open() system call, and the user seeks clarification on how to correctly access the second argument.
+Answer
+
+In x64 Linux assembly programming, function arguments are typically passed through registers and the stack. The first six integer or pointer arguments are passed in the registers RDI, RSI, RDX, RCX, R8, and R9, respectively. Any additional arguments are pushed onto the stack.
+
+In your case, you are interested in accessing the second argument, which is typically passed in the RSI register. However, if you are looking to access it from the stack (for instance, if there are more than six arguments), you can do so by calculating the correct offset from the stack pointer (RSP).
+Understanding the Stack Frame
+
+When a function is called, the stack frame is set up as follows:
+
+    The return address is pushed onto the stack.
+    The arguments are pushed onto the stack in reverse order.
+
+For example, if you have a function call like this:
+
+language-c
+
+open("file.txt", O_RDONLY);
+
+The stack would look something like this after the call:
+
+| Return Address |
+| O_RDONLY       |  <- [rsp+8]
+| "file.txt"    |  <- [rsp+16]
+
+Accessing the Second Argument
+
+To access the second argument (in this case, O_RDONLY), you would use the following assembly code:
+
+language-assembly
+
+global _start ; entry point so _start 
+
+section .text
+
+_start:
+    ; Open a file using open() = 2 (OPEN SYSTEM CALL NUMBER IS 2 ON X64-LINUX)
+    mov rax, 2                ; System call number for open
+    mov rdi, [rsp + 16]       ; First argument: filename
+    mov rsi, [rsp + 8]        ; Second argument: flags (e.g., O_RDONLY)
+    
+    ; Prepare for the syscall
+    syscall                   ; Invoke the system call
+
+    ; Exit the program
+    mov rax, 60               ; System call number for exit
+    xor rdi, rdi              ; Exit code 0
+    syscall                   ; Invoke the system call
+
+Explanation of the Code
+
+    System Call Number: The mov rax, 2 instruction sets up the system call number for open(), which is 2 in the x64 Linux syscall interface.
+
+    Accessing Arguments:
+        mov rdi, [rsp + 16]: This instruction retrieves the first argument (the filename) from the stack. The offset 16 is used because the return address is at rsp and the first argument is at rsp + 16.
+        mov rsi, [rsp + 8]: This instruction retrieves the second argument (the flags) from the stack. The offset 8 is used to access the flags directly.
+
+    Syscall Invocation: The syscall instruction is used to invoke the system call with the parameters set in the registers.
+
+    Exiting the Program: Finally, the program exits cleanly by setting the syscall number for exit (60) and calling syscall again.
+
+Conclusion
+
+In summary, to access the second argument from the stack pointer (RSP) in x64 assembly, you need to calculate the correct offset based on the stack layout. The offsets depend on the number of arguments and the return address. By following the conventions of the x64 Linux calling convention, you can effectively retrieve and utilize function arguments in your assembly programs.
+
+
+
+RSP ==> ARG C ==> ARGUEMENT COUNTER  
+RSP + 8 ==> PROGRAM NAME 
+RSP + 16 ==> 1ST ARGUEMENT 
+
+rsi ==> handles open() mode 
+rdx ==> mode to append,create,write ... for a specific file 
+
+"https://cs.brown.edu/courses/cs033/docs/guides/x64_cheatsheet.pdf"
+"http://6.s081.scripts.mit.edu/sp18/x86-64-architecture-guide.html"
+"https://stackoverflow.com/questions/23367624/intel-64-rsi-and-rdi-registers"
+'''
+
+EXTRA DETAILS :
+"https://lwn.net/Articles/604287/"
+"https://lwn.net/Articles/604015/"
+
+
+final commands to compile and execute : 
+"hp@ubuntu:~/CATcommandUsingAssembly$ nasm -f elf64 cat.asm ==> to compile 
+hp@ubuntu:~/CATcommandUsingAssembly$ ld cat.o ==>  to link
+hp@ubuntu:~/CATcommandUsingAssembly$ ./a.out cat.asm ==> view the output 
+"
+
+

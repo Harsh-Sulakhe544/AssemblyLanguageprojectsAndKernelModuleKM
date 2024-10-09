@@ -1,0 +1,32 @@
+refer : "https://www.cs.uaf.edu/courses/cs301/2014-fall/notes/memory/index.html"
+
+registers : 
+"https://wiki.cdot.senecapolytechnic.ca/wiki/X86_64_Register_and_Instruction_Quick_Start" 
+"https://www.eecg.utoronto.ca/~amza/www.mindsec.com/files/x86regs.html"
+"https://www.tutorialspoint.com/assembly_programming/assembly_registers.htm"
+
+'''
+why "jmp $ " at the end : 
+
+==> 
+For detailed explanation of why he made the program an infinite loop at the end:
+
+A program actually needs to call a certain syscall to exit itself. For C programs, there's usually a hidden function wrapping main() doing that for you so you can just return from main to that to exit the program. For assembly programs, you have to do it yourself:
+
+By moving 60 (sys_exit) or 231 (sys_exit_group, preferred, needed by multithreaded program) to rax and 0 (exit status) to rdi then doing a syscall.
+
+If you don't do that, execution will not halt after printing the working directory and will try to execute invalid instructions, crashing the program.
+Using `ret` won't work either, since `_start` is literally the entry point of the program, with nothing to return to.
+
+Making it an infinite loop prevents the cpu from executing invalid instructions until you eg. press Ctrl+C to tell the OS to terminate the program, so it wouldn't crash. It doesn't require much explanation and exiting the program is not the focus of the video anyway so that's probably why it's used.
+'''
+
+"
+final commands to run to get the output : 
+
+hp@ubuntu:~/PWDcommandUsingAssembly$ nasm -f elf64 pwd.asm 
+hp@ubuntu:~/PWDcommandUsingAssembly$ ld pwd.o
+hp@ubuntu:~/PWDcommandUsingAssembly$ ./a.out 
+/home/hp/PWDcommandUsingAssembly
+
+"
